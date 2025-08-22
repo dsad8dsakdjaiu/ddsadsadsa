@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Drag 3 Dots Sequentially with Counter</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: sans-serif;
+        color: white;
+        flex-direction: column;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      .game-area {
+        display: flex;
+        width: 300px;
+        height: 150px;
+        border: 1px solid #444;
+      }
+
+      .box {
+        flex: 1;
+        position: relative;
+        background-color: #111;
+        border-right: 1px solid #222;
+      }
+      .box:last-child {
+        border-right: none;
+      }
+
+      .dot {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #3498db;
+        position: absolute;
+        cursor: grab;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        user-select: none;
+      }
+
+      #message {
+        margin-top: 15px;
+        font-size: 18px;
+        color: lime;
+        min-height: 24px;
+      }
+
+      #counter {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Drag all 3 dots to the right box</h2>
+    <div id="counter">(0/3)</div>
+
+    <div class="game-area">
+      <div class="box" id="left-box"></div>
+      <div class="box" id="right-box"></div>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+      const leftBox = document.getElementById("left-box");
+      const rightBox = document.getElementById("right-box");
+      const message = document.getElementById("message");
+      const counter = document.getElementById("counter");
+
+      let currentDot = 0;
+      const totalDots = 3;
+      let draggedCount = 0;
+
+      function updateCounter() {
+        counter.textContent = `(${draggedCount}/${totalDots})`;
+      }
+
+      function isInsideBox(x, y, box) {
+        const rect = box.getBoundingClientRect();
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      }
+
+      function createCustomDot() {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+
+        let offsetX,
+          offsetY,
+          dragging = false;
+
+        dot.addEventListener("mousedown", (e) => {
+          dragging = true;
+          dot.style.cursor = "grabbing";
+          const rect = dot.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          dot.style.zIndex = 1000;
+          document.body.appendChild(dot);
+          dot.style.position = "fixed";
+          dot.style.left = e.clientX - offsetX + "px";
+          dot.style.top = e.clientY - offsetY + "px";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          if (!dragging) return;
+          e.preventDefault();
+          dot.style.left = e.clientX - offsetX + "px";
+          dot.style.top = e.clientY - offsetY + "px";
+        });
+
+        document.addEventListener("mouseup", (e) => {
+          if (!dragging) return;
+          dragging = false;
+          dot.style.cursor = "grab";
+          dot.style.zIndex = "";
+
+          const x = e.clientX,
+            y = e.clientY;
+
+          if (isInsideBox(x, y, rightBox)) {
+            const rect = rightBox.getBoundingClientRect();
+            dot.style.position = "absolute";
+            dot.style.left = x - rect.left - offsetX + "px";
+            dot.style.top = y - rect.top - offsetY + "px";
+            rightBox.appendChild(dot);
+
+            draggedCount++;
+            updateCounter();
+
+            currentDot++;
+            if (currentDot === totalDots - 1) {
+              message.textContent = "Last dot is native draggable! Drag it now.";
+              spawnDot(currentDot);
+            } else {
+              spawnDot(currentDot);
+            }
+          } else {
+            const rect = leftBox.getBoundingClientRect();
+            dot.style.position = "absolute";
+            dot.style.left = x - rect.left - offsetX + "px";
+            dot.style.top = y - rect.top - offsetY + "px";
+            leftBox.appendChild(dot);
+          }
+        });
+
+        return dot;
+      }
+
+      function createNativeDraggableDot() {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.setAttribute("draggable", "true");
+        dot.style.cursor = "grab";
+
+        dot.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", "dot3");
+          message.textContent = "Native dragstart event triggered for last dot!";
+        });
+
+        dot.addEventListener("dragend", (e) => {
+          draggedCount++;
+          updateCounter();
+          message.textContent = "Game finished! All dots dragged.";
+        });
+
+        return dot;
+      }
+
+      function spawnDot(index) {
+        leftBox.innerHTML = "";
+        message.textContent = "";
+
+        const boxWidth = leftBox.clientWidth;
+        const boxHeight = leftBox.clientHeight;
+        const y = Math.floor(Math.random() * (boxHeight - 50));
+        let x;
+
+        if (index === 0) x = 10;
+        else if (index === 1) x = boxWidth / 2 - 25;
+        else x = boxWidth - 50 - 10;
+
+        if (index < totalDots - 1) {
+          const dot = createCustomDot();
+          dot.style.left = x + "px";
+          dot.style.top = y + "px";
+          leftBox.appendChild(dot);
+        } else {
+          const dot = createNativeDraggableDot();
+          dot.style.position = "absolute";
+          dot.style.left = x + "px";
+          dot.style.top = y + "px";
+          leftBox.appendChild(dot);
+        }
+      }
+
+      updateCounter();
+      spawnDot(currentDot);
+    </script>
+  </body>
+</html>

